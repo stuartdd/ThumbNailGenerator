@@ -6,7 +6,6 @@
 package main.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import config.Loadable;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -18,7 +17,7 @@ import main.GLoaderException;
  *
  * @author stuar
  */
-public class ConfigData implements Loadable {
+public class ConfigData {
 
     private String thumbNailsRoot;
     private String fileTimeStamp;
@@ -148,7 +147,6 @@ public class ConfigData implements Loadable {
         return sdf.format(new Date());
     }
 
-    @Override
     public void loaded(Object cdb) {
         testPath(thumbNailsRoot);
         List<String> temp = new ArrayList<>();

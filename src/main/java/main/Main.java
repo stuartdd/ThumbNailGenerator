@@ -1,12 +1,17 @@
 package main;
 
-import config.Config;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -14,10 +19,12 @@ import java.util.List;
 import java.util.Map;
 import main.image.CreateThumbNail;
 import main.config.ConfigData;
+import main.config.ConfigDataException;
 import main.config.UserData;
 
 public class Main {
 
+    private static ObjectMapper jsonMapper;
     private static FileOutputStream logOutputStream;
     private static FileOutputStream logErrorOutputStream;
     private static final String NL = System.getProperty("line.separator");
@@ -26,7 +33,14 @@ public class Main {
     private static String logLineSeperator;
     private static int timeStampOffset;
 
-        /**
+    static {
+        jsonMapper = new ObjectMapper();
+        jsonMapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
+        jsonMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+        jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+    }
+
+    /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
@@ -49,9 +63,9 @@ public class Main {
         }
 
         if (configArg != null) {
-            configData = (ConfigData) Config.configFromJsonFile(ConfigData.class, args[0]);
+            configData = (ConfigData) createConfigFromJsonFile(ConfigData.class, args[0]);
         } else {
-            configData = (ConfigData) Config.configFromJsonFile(ConfigData.class, "configThumbNailGen.json");
+            configData = (ConfigData) createConfigFromJsonFile(ConfigData.class, "configThumbNailGen.json");
         }
         timeStampOffset = configData.formatFileTimeStamp(new Date()).length() + 1;
         initLog();
@@ -65,7 +79,41 @@ public class Main {
         }
 
     }
-    
+
+    /**
+     * Create an object from some JSON
+     *
+     * MyBean myBean = (MyBean) JsonUtils.beanFromJson(MyBean.class, TEST_JSON);
+     *
+     * @param beanType The class of the object
+     * @param jsonFile The string containing the JSON
+     * @return The object (will need casting)
+     */
+    public static Object createConfigFromJsonFile(Class beanType, String jsonFile) {
+
+        File f = new File((new File(jsonFile)).getAbsolutePath());
+        if (f.exists()) {
+            throw new ConfigDataException("JSONfile [" + f.getAbsolutePath() + "] not found");
+        }
+        try {
+            return jsonMapper.readValue(new String(Files.readAllBytes(f.toPath())), beanType);
+        } catch (IOException ex) {
+            throw new ConfigDataException("Failed to parse JSON to a Bean Object", ex);
+        }
+    }
+
+    private static ObjectMapper createMapper(boolean formatted, boolean ignoreEmpty) {
+        ObjectMapper jsonMapper = new ObjectMapper();
+        jsonMapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
+        if (formatted) {
+            jsonMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+        }
+        if (ignoreEmpty) {
+            jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+        }
+        return jsonMapper;
+    }
+
     private static void doFullScan() {
         log(SEP);
         log("RUNNING FULL SCAN mode");
@@ -233,7 +281,6 @@ public class Main {
         log(time(startTime1) + ":TOTAL RUN  TIME");
         log(SEP);
     }
-
 
     public static ConfigData getConfigData() {
         return configData;
