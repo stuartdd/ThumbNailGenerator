@@ -24,7 +24,7 @@ import main.config.UserData;
 
 public class Main {
 
-    private static ObjectMapper jsonMapper;
+    private static final String THUMBNAIL_FILE_SUFFIX = ".tn.jpg";
     private static FileOutputStream logOutputStream;
     private static FileOutputStream logErrorOutputStream;
     private static final String NL = System.getProperty("line.separator");
@@ -33,10 +33,19 @@ public class Main {
     private static String logLineSeperator;
     private static int timeStampOffset;
 
+    private static final ObjectMapper jsonMapper;
+    private static final FileFilter thumbNailFilter = new FileFilter() {
+        @Override
+        public boolean accept(File pathname) {
+            return (pathname.isFile() && pathname.getName().endsWith(THUMBNAIL_FILE_SUFFIX));
+        }
+    };
+
     static {
         jsonMapper = new ObjectMapper();
         jsonMapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
         jsonMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+        
         jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
     }
 
@@ -68,6 +77,7 @@ public class Main {
             configData = (ConfigData) createConfigFromJsonFile(ConfigData.class, "configThumbNailGen.json");
         }
         timeStampOffset = configData.formatFileTimeStamp(new Date()).length() + 1;
+
         initLog();
 
         if (diffArg) {
@@ -100,18 +110,6 @@ public class Main {
         } catch (IOException ex) {
             throw new ConfigDataException("Failed to parse JSON to a Bean Object", ex);
         }
-    }
-
-    private static ObjectMapper createMapper(boolean formatted, boolean ignoreEmpty) {
-        ObjectMapper jsonMapper = new ObjectMapper();
-        jsonMapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
-        if (formatted) {
-            jsonMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-        }
-        if (ignoreEmpty) {
-            jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-        }
-        return jsonMapper;
     }
 
     private static void doFullScan() {
@@ -186,25 +184,44 @@ public class Main {
         log(SEP);
         log("RUNNING in DIFF mode");
         long startTime1 = System.currentTimeMillis();
+        /*
+        For each user in the config data
+        */
         for (String user : configData.getResources().getUsers().keySet()) {
             UserData userData = configData.getResources().getUsers().get(user);
             if (userData == null) {
-                throw new GLoaderException("User '" + user + "' could not be located");
+                throw new GLoaderException("User '" + user + "' data is null");
             }
-            File thumbNails = new File(configData.getThumbNailsRoot() + File.separator + user);
-            Map<String, String> map = new HashMap<>();
-            mapImagesForPath(map, thumbNails, thumbNails.getAbsolutePath().length());
+            /*
+            Thumb nails for a user are stored at thunb nail root + the users name
+            */
+            File thumbNailsRoot = new File(configData.getThumbNailsRoot() + File.separator + user);
+            /*
+                Create a map of ALL the images in the thumbNails for the user. Path excludes root path
+                The names will have the date-time and .jpg stripped off them so they are original image names.
+            */
+            Map<String, String> thumbNailMap = new HashMap<>();
+            mapImagesForPath(thumbNailMap, thumbNailsRoot, thumbNailsRoot.getAbsolutePath().length(), jpgFilter );
+            
 
+            /*
+                Each users image root directory
+            */
             String imageRoot = userData.getImageRoot();
-            File imageRootFile = new File(imageRoot);
-            imageRootFile = new File(imageRootFile.getAbsolutePath());
+            File imageRootFile = new File((new File(imageRoot)).getAbsolutePath());
 
             int hits = 0;
             int countCreated = 0;
             int countErrors = 0;
             int countDeletes = 0;
+            /*
+            For each imageDirectory in the users image root directory
+            */
             for (String imagePath : userData.getImagePaths()) {
 
+                /*
+                Path to the base of the image directory
+                */
                 File imagePathFile;
                 if (imagePath.length() == 0) {
                     imagePathFile = new File(imageRootFile.getAbsolutePath());
@@ -297,9 +314,9 @@ public class Main {
      * @param thName
      * @return
      */
-    private static String thumbnailNameToFileName(String thName) {
+    private static String fileNameFromThumbNailName(String thName) {
         int pos = thName.lastIndexOf('/');
-        return thName.substring(0, pos + 1) + thName.substring(pos + timeStampOffset + 1, thName.length() - 4);
+        return thName.substring(0, pos + 1) + thName.substring(pos + timeStampOffset + 1, thName.length() - JPG.length());
     }
 
     private static void listImagesForPath(List<String> list, File path, int rootPathLength) {
@@ -327,23 +344,18 @@ public class Main {
         }
     }
 
-    private static void mapImagesForPath(Map<String, String> map, File path, int rootPathLength) {
+    private static void mapThumbNailsForPath(Map<String, String> map, File path, int rootPathLength) {
         if (path.isDirectory()) {
-            File[] files = path.listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File file) {
-                    return (Main.getConfigData().isImageFile(file));
-                }
-            });
+            File[] files = path.listFiles(thumbNailFilter);
             for (File f : files) {
                 if (f.isDirectory()) {
-                    mapImagesForPath(map, f, rootPathLength);
+                    mapThumbNailsForPath(map, f, rootPathLength);
                 } else {
                     String relativeFilePath = f.getAbsolutePath().substring(rootPathLength);
                     while (relativeFilePath.startsWith(File.separator)) {
                         relativeFilePath = relativeFilePath.substring(File.separator.length());
                     }
-                    map.put(thumbnailNameToFileName(relativeFilePath), "?");
+                    map.put(fileNameFromThumbNailName(relativeFilePath), "?");
                 }
             }
         }
