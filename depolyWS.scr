@@ -1,0 +1,15 @@
+cd /home/pi/PiServer
+lcd build/libs
+rm PiThumbNailGenExe-1.0.old.jar
+rename PiThumbNailGenExe-1.0.jar PiThumbNailGenExe-1.0.old.jar
+put PiThumbNailGenExe-1.0.jar
+chmod 775 PiThumbNailGenExe-1.0.jar
+
+cd /home/pi/PiServer
+lcd ../..
+put configThumbNailGen.json
+put runThumbNailGen.sh
+chmod 775 runThumbNailGen.sh
+
+quit
+

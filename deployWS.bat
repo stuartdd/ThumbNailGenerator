@@ -1,0 +1,1 @@
+PSFTP pi@topbox -pw ims2d -be -b depolyWS.scr
