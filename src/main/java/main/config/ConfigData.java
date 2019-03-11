@@ -20,7 +20,8 @@ import main.GLoaderException;
 public class ConfigData {
 
     private String thumbNailsRoot;
-    private String fileTimeStamp;
+    private String thumbNailTimeStamp;
+    private String thumbNailFileSuffix;
     private Resources resources;
     private boolean verbose = false;
     private boolean test = false;
@@ -49,12 +50,20 @@ public class ConfigData {
         this.thumbNailsRoot = thumbNailsRoot;
     }
 
-    public String getFileTimeStamp() {
-        return fileTimeStamp;
+    public String getThumbNailTimeStamp() {
+        return thumbNailTimeStamp;
     }
 
-    public void setFileTimeStamp(String fileTimeStamp) {
-        this.fileTimeStamp = fileTimeStamp;
+    public void setThumbNailTimeStamp(String thumbNailTimeStamp) {
+        this.thumbNailTimeStamp = thumbNailTimeStamp;
+    }
+
+    public String getThumbNailFileSuffix() {
+        return thumbNailFileSuffix;
+    }
+
+    public void setThumbNailFileSuffix(String thumbNailFileSuffix) {
+        this.thumbNailFileSuffix = thumbNailFileSuffix;
     }
 
     public List<String> getImageExtensions() {
@@ -130,8 +139,8 @@ public class ConfigData {
     }
 
     @JsonIgnore
-    public String formatFileTimeStamp(Date dateTimeOriginal) {
-        SimpleDateFormat sdf = new SimpleDateFormat(getFileTimeStamp());
+    public String formatThumbNailFileTimeStamp(Date dateTimeOriginal) {
+        SimpleDateFormat sdf = new SimpleDateFormat(getThumbNailTimeStamp());
         return sdf.format(dateTimeOriginal);
     }
 

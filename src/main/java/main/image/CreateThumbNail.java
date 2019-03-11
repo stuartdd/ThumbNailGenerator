@@ -64,7 +64,7 @@ public class CreateThumbNail {
             throw new GLoaderException("Failed to read image metadata " + metaData.getErr());
         }
         String fullFileName = thumbnailParent.getAbsolutePath() + File.separator
-                + Main.getConfigData().formatFileTimeStamp(metaData.getDateTimeOriginal())
+                + Main.getConfigData().formatThumbNailFileTimeStamp(metaData.getDateTimeOriginal())
                 + "_" + fromFile.getName() + '.' + FORMAT;
 
         File fullFileNameFile = new File(fullFileName);

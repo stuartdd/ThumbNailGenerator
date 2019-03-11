@@ -1,6 +1,7 @@
 {
     "thumbNailsRoot": "/thumbnails",
-    "fileTimeStamp": "yyyy_MM_dd_HH_mm_ss",
+    "thumbNailTimeStamp": "yyyy_MM_dd_HH_mm_ss",
+    "thumbNailFileSuffix" : ".jpg",
     "imageExtensions": [".jpg"],
     "verbose": true,
     "logFilePath": "/logs",

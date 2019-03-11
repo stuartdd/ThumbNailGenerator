@@ -24,161 +24,52 @@ import main.config.UserData;
 
 public class Main {
 
-    private static final String THUMBNAIL_FILE_SUFFIX = ".tn.jpg";
     private static FileOutputStream logOutputStream;
     private static FileOutputStream logErrorOutputStream;
     private static final String NL = System.getProperty("line.separator");
     private static final String SEP = "--------------------------------------------------------------------------------------------------------------------";
     private static ConfigData configData;
+    private static Utils utils;
     private static String logLineSeperator;
-    private static int timeStampOffset;
-
     private static final ObjectMapper jsonMapper;
-    private static final FileFilter thumbNailFilter = new FileFilter() {
-        @Override
-        public boolean accept(File pathname) {
-            return (pathname.isFile() && pathname.getName().endsWith(THUMBNAIL_FILE_SUFFIX));
-        }
-    };
 
     static {
         jsonMapper = new ObjectMapper();
         jsonMapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
         jsonMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-        
         jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
     }
 
+    public static ConfigData getConfigData() {
+        return configData;
+    }
+
+    
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
         String configArg = null;
-        boolean diffArg = true;
-        boolean fullScanArg = false;
+
         for (String arg : args) {
             if (arg.startsWith("-")) {
-                if (arg.equalsIgnoreCase("-diff")) {
-                    diffArg = true;
-                    fullScanArg = false;
-                }
-                if (arg.equalsIgnoreCase("-full")) {
-                    diffArg = false;
-                    fullScanArg = true;
-                }
             } else {
                 configArg = arg;
             }
         }
 
         if (configArg != null) {
-            configData = (ConfigData) createConfigFromJsonFile(ConfigData.class, args[0]);
+            configData = (ConfigData) utils.createConfigFromJsonFile(args[0]);
         } else {
-            configData = (ConfigData) createConfigFromJsonFile(ConfigData.class, "configThumbNailGen.json");
+            configData = (ConfigData) utils.createConfigFromJsonFile("configThumbNailGen.json");
         }
-        timeStampOffset = configData.formatFileTimeStamp(new Date()).length() + 1;
-
+        utils = new Utils(configData);
         initLog();
-
-        if (diffArg) {
-            doDiff();
-        } else {
-            if (fullScanArg) {
-                doFullScan();
-            }
-        }
-
+        
+ 
+        doDiff();
     }
 
-    /**
-     * Create an object from some JSON
-     *
-     * MyBean myBean = (MyBean) JsonUtils.beanFromJson(MyBean.class, TEST_JSON);
-     *
-     * @param beanType The class of the object
-     * @param jsonFile The string containing the JSON
-     * @return The object (will need casting)
-     */
-    public static Object createConfigFromJsonFile(Class beanType, String jsonFile) {
-
-        File f = new File((new File(jsonFile)).getAbsolutePath());
-        if (f.exists()) {
-            throw new ConfigDataException("JSONfile [" + f.getAbsolutePath() + "] not found");
-        }
-        try {
-            return jsonMapper.readValue(new String(Files.readAllBytes(f.toPath())), beanType);
-        } catch (IOException ex) {
-            throw new ConfigDataException("Failed to parse JSON to a Bean Object", ex);
-        }
-    }
-
-    private static void doFullScan() {
-        log(SEP);
-        log("RUNNING FULL SCAN mode");
-        int counterTotal = 0;
-        int counterCreatedTotal = 0;
-        long startTime1 = System.currentTimeMillis();
-        for (String user : configData.getResources().getUsers().keySet()) {
-            UserData userData = configData.getResources().getUsers().get(user);
-            if (userData == null) {
-                throw new GLoaderException("User '" + user + "' could not be located");
-            }
-            String imageRoot = userData.getImageRoot();
-            File imageRootFile = new File(imageRoot);
-            imageRootFile = new File(imageRootFile.getAbsolutePath());
-            int counterNofN = 0;
-            int counterCreated = 0;
-            int counterSkippedNofN = 0;
-            for (String imagePath : userData.getImagePaths()) {
-                File imagePathFile;
-                if (imagePath.length() == 0) {
-                    imagePathFile = new File(imageRootFile.getAbsolutePath());
-                } else {
-                    imagePathFile = new File(imageRootFile.getAbsolutePath() + File.separator + imagePath);
-                }
-                imagePathFile = new File(imagePathFile.getAbsolutePath());
-                log(SEP);
-                log(time(startTime1) + ":SCANNING: User:" + user + ". Path:" + imagePathFile.getAbsolutePath());
-
-                List<String> list = new ArrayList<>();
-                listImagesForPath(list, imagePathFile, imageRootFile.getAbsolutePath().length());
-                counterNofN = 0;
-                counterSkippedNofN = 0;
-                for (String s : list) {
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException ex) {
-                    }
-                    long createTime = System.currentTimeMillis();
-                    boolean created;
-                    counterNofN++;
-                    try {
-                        created = CreateThumbNail.create(imageRootFile.getAbsolutePath(), s, user, configData.getThumbNailsRoot());
-                        if (created) {
-                            log(time(createTime) + ":IMAGE NEW : (" + counterNofN + " of " + list.size() + ") " + s + " ");
-                            counterCreated++;
-                        } else {
-                            counterSkippedNofN++;
-                            if ((counterSkippedNofN % 500) == 0) {
-                                log(time(startTime1) + ":IMAGES SKIPPED: (" + counterSkippedNofN + " of " + list.size() + ')');
-                            }
-                        }
-                    } catch (Exception ex) {
-                        log(time(startTime1) + ":IMAGE ERR :  (" + counterNofN + " of " + list.size() + ") " + s + " Failed " + ex.getClass().getSimpleName() + ":" + ex.getMessage(), ex);
-                    }
-                }
-                if ((counterSkippedNofN % 500) > 0) {
-                    log(time(startTime1) + ":IMAGES SKIPPED: (" + counterSkippedNofN + " of " + list.size() + ")");
-                }
-                counterTotal = counterTotal + list.size();
-            }
-            counterCreatedTotal = counterCreatedTotal + counterCreated;
-        }
-        log(SEP);
-        log(time(startTime1) + ":TOTAL: PROCESSED:" + counterTotal + " CREATED:" + counterCreatedTotal);
-        log(SEP);
-
-    }
 
     private static void doDiff() {
         log(SEP);
@@ -186,7 +77,7 @@ public class Main {
         long startTime1 = System.currentTimeMillis();
         /*
         For each user in the config data
-        */
+         */
         for (String user : configData.getResources().getUsers().keySet()) {
             UserData userData = configData.getResources().getUsers().get(user);
             if (userData == null) {
@@ -194,19 +85,19 @@ public class Main {
             }
             /*
             Thumb nails for a user are stored at thunb nail root + the users name
-            */
+             */
             File thumbNailsRoot = new File(configData.getThumbNailsRoot() + File.separator + user);
             /*
                 Create a map of ALL the images in the thumbNails for the user. Path excludes root path
                 The names will have the date-time and .jpg stripped off them so they are original image names.
-            */
+             */
             Map<String, String> thumbNailMap = new HashMap<>();
-            mapImagesForPath(thumbNailMap, thumbNailsRoot, thumbNailsRoot.getAbsolutePath().length(), jpgFilter );
-            
+            mapThumbNailsForPath(thumbNailMap, thumbNailsRoot, thumbNailsRoot.getAbsolutePath().length());
+
 
             /*
                 Each users image root directory
-            */
+             */
             String imageRoot = userData.getImageRoot();
             File imageRootFile = new File((new File(imageRoot)).getAbsolutePath());
 
@@ -216,12 +107,12 @@ public class Main {
             int countDeletes = 0;
             /*
             For each imageDirectory in the users image root directory
-            */
+             */
             for (String imagePath : userData.getImagePaths()) {
 
                 /*
                 Path to the base of the image directory
-                */
+                 */
                 File imagePathFile;
                 if (imagePath.length() == 0) {
                     imagePathFile = new File(imageRootFile.getAbsolutePath());
@@ -232,18 +123,19 @@ public class Main {
                 List<String> list = new ArrayList<>();
                 listImagesForPath(list, imagePathFile, imageRootFile.getAbsolutePath().length());
                 for (String s : list) {
-                    if (map.containsKey(s)) {
-                        map.put(s, "H");
+                    if (thumbNailMap.containsKey(s)) {
+                        thumbNailMap.put(s, "H");
                         hits++;
                     } else {
-                        map.put(s, "M");
+                        thumbNailMap.put(s, "M");
                     }
                 }
             }
+
             List<String> missList = new ArrayList<>();
             List<String> delList = new ArrayList<>();
 
-            for (Map.Entry<String, String> tag : map.entrySet()) {
+            for (Map.Entry<String, String> tag : thumbNailMap.entrySet()) {
                 if (tag.getValue().equals("?")) {
                     delList.add(tag.getKey());
                 }
@@ -251,6 +143,7 @@ public class Main {
                     missList.add(tag.getKey());
                 }
             }
+
             log(SEP);
             log("TOTAL for user [" + user + "] HIT(" + hits + ") MISS(" + missList.size() + ") DEL(" + delList.size() + ")");
             for (String f : missList) {
@@ -270,7 +163,7 @@ public class Main {
 
             }
             for (String f : delList) {
-                File delFile = new File(thumbNails + File.separator + f);
+                File delFile = new File(thumbNailsRoot + File.separator + f);
                 delFile = new File(delFile.getAbsolutePath());
                 File[] list = delFile.getParentFile().listFiles();
                 boolean hasBeenFound = false;
@@ -299,26 +192,6 @@ public class Main {
         log(SEP);
     }
 
-    public static ConfigData getConfigData() {
-        return configData;
-    }
-
-    /**
-     * media/Photos/2007-09-21_Lyns_Wedding_Photos/Gareth's
-     * Pics/2007_09_21_21_27_15_Picture 142.jpg.jpg
-     *
-     * to
-     *
-     * media/Photos/2007-09-21_Lyns_Wedding_Photos/Gareth's Pics/Picture 142.jpg
-     *
-     * @param thName
-     * @return
-     */
-    private static String fileNameFromThumbNailName(String thName) {
-        int pos = thName.lastIndexOf('/');
-        return thName.substring(0, pos + 1) + thName.substring(pos + timeStampOffset + 1, thName.length() - JPG.length());
-    }
-
     private static void listImagesForPath(List<String> list, File path, int rootPathLength) {
         if (path.isDirectory()) {
             File[] files = path.listFiles(new FileFilter() {
@@ -327,7 +200,7 @@ public class Main {
                     if (file.getAbsolutePath().contains(".thumbnails")) {
                         return false;
                     }
-                    return (Main.getConfigData().isImageFile(file));
+                    return (configData.isImageFile(file));
                 }
             });
             for (File f : files) {
@@ -346,7 +219,7 @@ public class Main {
 
     private static void mapThumbNailsForPath(Map<String, String> map, File path, int rootPathLength) {
         if (path.isDirectory()) {
-            File[] files = path.listFiles(thumbNailFilter);
+            File[] files = path.listFiles(utils.getThumbNailFileFilter());
             for (File f : files) {
                 if (f.isDirectory()) {
                     mapThumbNailsForPath(map, f, rootPathLength);
@@ -355,7 +228,7 @@ public class Main {
                     while (relativeFilePath.startsWith(File.separator)) {
                         relativeFilePath = relativeFilePath.substring(File.separator.length());
                     }
-                    map.put(fileNameFromThumbNailName(relativeFilePath), "?");
+                    map.put(utils.fileNameFromThumbNailName(relativeFilePath), "?");
                 }
             }
         }
