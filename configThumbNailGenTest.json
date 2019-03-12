@@ -1,0 +1,30 @@
+{
+    "thumbNailsRoot": "/thumbnails",
+    "thumbNailTimeStamp": "yyyy_MM_dd_HH_mm_ss",
+    "thumbNailFileSuffix" : ".jpg",
+    "imageExtensions": [".jpg"],
+    "verbose": true,
+    "logFilePath": "/logs",
+    "logFileName": "/logs/thumbNailGenerator_%{ts}.log",
+    "logErrorFileName": "/logs/thumbNailGeneratorErrors_%{ts}.log",
+    "logFileTimeStamp": "yyyy_MM_dd_HH",
+    "logLineTimeStamp": "yyyy_MM_dd_HH_mm_ss",
+    "logLineSeparator": "NL",
+    "test": true,
+    "resources": {
+        "users": {
+            "shared": {
+                "imageRoot": "/Development/PiServerSpringBoot/data/images/shared",
+                "imagePaths": ["lg 001",
+                    "lg 002"
+                ]
+            },
+            "stuart": {
+                "imageRoot": "/Development/PiServerSpringBoot/data/images/stuart",
+                "imagePaths": ["lg 001",
+                    "lg 002"
+                ]
+            }
+        }
+    }
+}

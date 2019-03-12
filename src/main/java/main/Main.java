@@ -17,6 +17,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import main.image.CreateThumbNail;
 import main.config.ConfigData;
 import main.config.ConfigDataException;
@@ -66,13 +68,21 @@ public class Main {
         utils = new Utils(configData);
         initLog();
         
-        doDiff();
+        try {
+            doDiff();
+        } catch (IOException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
 
-    private static void doDiff() {
+    private static void doDiff() throws IOException {
         log(SEP);
         long startTime1 = System.currentTimeMillis();
+        File thumbNailsRoot = new File(configData.getThumbNailsRoot());
+        if (!thumbNailsRoot.exists()) {
+            throw new ConfigDataException("ThumbNailsRoot: ["+thumbNailsRoot+"] does not exist. Please create it");
+        }
         /*
         For each user in the config data
          */
@@ -84,7 +94,7 @@ public class Main {
             /*
             Thumb nails for a user are stored at thunb nail root + the users name
              */
-            File thumbNailsRoot = new File(configData.getThumbNailsRoot() + File.separator + user);
+            thumbNailsRoot = new File(thumbNailsRoot.getAbsolutePath() + File.separator + user);
             /*
                 Create a map of ALL the images in the thumbNails for the user. Path excludes root path
                 The names will have the date-time and .jpg stripped off them so they are original image names.
@@ -107,7 +117,6 @@ public class Main {
             For each imageDirectory in the users image root directory
              */
             for (String imagePath : userData.getImagePaths()) {
-
                 /*
                 Path to the base of the image directory
                  */
@@ -117,7 +126,7 @@ public class Main {
                 } else {
                     imagePathFile = new File(imageRootFile.getAbsolutePath() + File.separator + imagePath);
                 }
-                imagePathFile = new File(imagePathFile.getAbsolutePath());
+                imagePathFile = new File(imagePathFile.getCanonicalPath());
                 List<String> list = new ArrayList<>();
                 listImagesForPath(list, imagePathFile, imageRootFile.getAbsolutePath().length());
                 for (String s : list) {
