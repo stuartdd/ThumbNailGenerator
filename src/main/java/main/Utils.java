@@ -48,7 +48,7 @@ public class Utils {
         }
         thumbNailTimeStamp = new SimpleDateFormat(fmt);
         thumbNailtimeStampLength = thumbNailTimeStamp.format(new Date()).length();
-        
+
         thumbNailFileSuffix = configData.getThumbNailFileSuffix();
         if ((thumbNailFileSuffix == null) || (thumbNailFileSuffix.isEmpty())) {
             throw new ConfigDataException("Config data 'thumbNailFileSuffix' is empty");
@@ -66,7 +66,7 @@ public class Utils {
         if (pos < 0) {
             return thumbNailFileName.substring(thumbNailtimeStampLength + 1, thumbNailFileName.length() - thumbNailFileSuffix.length());
         }
-        return thumbNailFileName.substring(0, pos + 1) + thumbNailFileName.substring((pos +1) + thumbNailtimeStampLength + 1, thumbNailFileName.length() - thumbNailFileSuffix.length());
+        return thumbNailFileName.substring(0, pos + 1) + thumbNailFileName.substring((pos + 1) + thumbNailtimeStampLength + 1, thumbNailFileName.length() - thumbNailFileSuffix.length());
     }
 
     public String thumbNailFileNameFromFileName(String fileName, Date date) {
@@ -75,7 +75,7 @@ public class Utils {
             return thumbNailTimeStamp.format(date) + '_' + fileName + thumbNailFileSuffix;
         }
         String fn = fileName.substring(pos + 1);
-        return fileName.substring(0, pos + 1)  + thumbNailTimeStamp.format(date) + '_' + fn + thumbNailFileSuffix;
+        return fileName.substring(0, pos + 1) + thumbNailTimeStamp.format(date) + '_' + fn + thumbNailFileSuffix;
     }
 
     /**
@@ -98,6 +98,23 @@ public class Utils {
         } catch (IOException ex) {
             ex.printStackTrace();
             throw new ConfigDataException("Failed to parse JSON to a Bean Object", ex);
+        }
+    }
+
+    public enum OS {
+        WIN, LINUX, MAC, UNKNOWN
+    }
+
+    public static OS resolveOS() {
+        String osName = System.getProperty("os.name").toLowerCase();
+        if ((osName.contains("win"))) {
+            return OS.WIN;
+        } else if (osName.contains("mac")) {
+            return OS.MAC;
+        } else if (osName.contains("nix") || osName.contains("nux") || osName.contains("aix")) {
+            return OS.LINUX;
+        } else {
+            return OS.UNKNOWN;
         }
     }
 

@@ -46,7 +46,6 @@ public class Main {
         return configData;
     }
 
-    
     /**
      * @param args the command line arguments
      */
@@ -67,7 +66,7 @@ public class Main {
         }
         utils = new Utils(configData);
         initLog();
-        
+
         try {
             doDiff();
         } catch (IOException ex) {
@@ -75,13 +74,12 @@ public class Main {
         }
     }
 
-
     private static void doDiff() throws IOException {
         log(SEP);
         long startTime1 = System.currentTimeMillis();
         File thumbNailsRoot = new File(configData.getThumbNailsRoot());
         if (!thumbNailsRoot.exists()) {
-            throw new ConfigDataException("ThumbNailsRoot: ["+thumbNailsRoot+"] does not exist. Please create it");
+            throw new ConfigDataException("ThumbNailsRoot: [" + thumbNailsRoot + "] does not exist. Please create it");
         }
         /*
         For each user in the config data
@@ -126,7 +124,8 @@ public class Main {
                 } else {
                     imagePathFile = new File(imageRootFile.getAbsolutePath() + File.separator + imagePath);
                 }
-                imagePathFile = new File(imagePathFile.getCanonicalPath());
+
+                imagePathFile = new File(imagePathFile.getAbsolutePath());
                 List<String> list = new ArrayList<>();
                 listImagesForPath(list, imagePathFile, imageRootFile.getAbsolutePath().length());
                 for (String s : list) {
@@ -221,6 +220,7 @@ public class Main {
                     list.add(relativeFilePath);
                 }
             }
+            log("Scanned images:" + path.getAbsolutePath() + ". Found ["+list.size()+"] files");
         }
     }
 
