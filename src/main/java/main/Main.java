@@ -66,14 +66,12 @@ public class Main {
         utils = new Utils(configData);
         initLog();
         
- 
         doDiff();
     }
 
 
     private static void doDiff() {
         log(SEP);
-        log("RUNNING in DIFF mode");
         long startTime1 = System.currentTimeMillis();
         /*
         For each user in the config data

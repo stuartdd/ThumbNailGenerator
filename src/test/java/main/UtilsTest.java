@@ -30,9 +30,6 @@ public class UtilsTest {
 
     @Before
     public void before() {
-        for (Map.Entry<Object, Object> s : System.getProperties().entrySet()) {
-            System.out.println(s);
-        }
         configData = Utils.createConfigFromJsonFile("configThumbNailGen.json");
         sdf = new SimpleDateFormat(configData.getThumbNailTimeStamp());
         ts = sdf.format(new Date());
