@@ -8,17 +8,10 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import main.image.CreateThumbNail;
 import main.config.ConfigData;
 import main.config.ConfigDataException;
@@ -32,7 +25,6 @@ public class Main {
     private static final String SEP = "--------------------------------------------------------------------------------------------------------------------";
     private static ConfigData configData;
     private static Utils utils;
-    private static String logLineSeperator;
     private static final ObjectMapper jsonMapper;
 
     static {
@@ -50,6 +42,7 @@ public class Main {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        
         String configArg = null;
 
         for (String arg : args) {
@@ -64,18 +57,17 @@ public class Main {
         } else {
             configData = (ConfigData) utils.createConfigFromJsonFile("configThumbNailGen.json");
         }
-        utils = new Utils(configData);
-        initLog();
+        utils = Utils.instance(configData);
 
         try {
             doDiff();
         } catch (IOException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            Utils.instance().getLogger().error(ex);
         }
     }
 
     private static void doDiff() throws IOException {
-        log(SEP);
+        Utils.instance().getLogger().info(SEP);
         long startTime1 = System.currentTimeMillis();
         File thumbNailsRoot = new File(configData.getThumbNailsRoot());
         if (!thumbNailsRoot.exists()) {
@@ -150,21 +142,21 @@ public class Main {
                 }
             }
 
-            log(SEP);
-            log("TOTAL for user [" + user + "] HIT(" + hits + ") MISS(" + missList.size() + ") DEL(" + delList.size() + ")");
+            Utils.instance().getLogger().info(SEP);
+            Utils.instance().getLogger().info("TOTAL for user [" + user + "] HIT(" + hits + ") MISS(" + missList.size() + ") DEL(" + delList.size() + ")");
             for (String f : missList) {
                 try {
                     boolean created = CreateThumbNail.create(imageRootFile.getAbsolutePath(), f, user, configData.getThumbNailsRoot());
                     if (created) {
                         countCreated++;
-                        log("USER[" + user + "] IMAGE NEW : " + f);
+                        Utils.instance().getLogger().info("USER[" + user + "] IMAGE NEW : " + f);
                     } else {
-                        log("USER[" + user + "] IMAGE SKIPPED : " + f);
+                        Utils.instance().getLogger().info("USER[" + user + "] IMAGE SKIPPED : " + f);
                     }
                 } catch (Exception ex) {
                     countErrors++;
-                    log("USER[" + user + "] IMAGE ERR : " + f + " " + ex.getClass().getSimpleName() + ":" + ex.getMessage());
-                    log("USER[" + user + "] IMAGE ERR : " + f + " " + ex.getClass().getSimpleName() + ":" + ex.getMessage(), ex);
+                    Utils.instance().getLogger().info("USER[" + user + "] IMAGE ERR : " + f + " " + ex.getClass().getSimpleName() + ":" + ex.getMessage());
+                    Utils.instance().getLogger().info("USER[" + user + "] IMAGE ERR : " + f + " " + ex.getClass().getSimpleName() + ":" + ex.getMessage(), ex);
                 }
 
             }
@@ -177,25 +169,25 @@ public class Main {
                     if (toDelete.getName().contains(delFile.getName())) {
                         hasBeenFound = true;
                         if (toDelete.delete()) {
-                            log("USER[" + user + "] DEL:" + user + ":" + toDelete.getAbsolutePath());
+                            Utils.instance().getLogger().info("USER[" + user + "] DEL:" + user + ":" + toDelete.getAbsolutePath());
                             countDeletes++;
                         } else {
-                            log("USER[" + user + "] IMAGE ERR:" + toDelete.getAbsolutePath() + " could not be deleted!");
-                            logError("USER[" + user + "] IMAGE ERR:" + toDelete.getAbsolutePath() + " could not be deleted!");
+                            Utils.instance().getLogger().info("USER[" + user + "] IMAGE ERR:" + toDelete.getAbsolutePath() + " could not be deleted!");
+                            Utils.instance().getLogErr().error("USER[" + user + "] IMAGE ERR:" + toDelete.getAbsolutePath() + " could not be deleted!");
                             countErrors++;
                         }
                     }
                 }
                 if (!hasBeenFound) {
-                    log("USER[" + user + "] IMAGE ERR:" + delFile.getAbsolutePath() + " not recognised!");
-                    logError("USER[" + user + "] IMAGE ERR:" + delFile.getAbsolutePath() + " not recognised!");
+                    Utils.instance().getLogger().info("USER[" + user + "] IMAGE ERR:" + delFile.getAbsolutePath() + " not recognised!");
+                    Utils.instance().getLogErr().error("USER[" + user + "] IMAGE ERR:" + delFile.getAbsolutePath() + " not recognised!");
                 }
             }
-            log("TOTAL for user [" + user + "] CREATED(" + countCreated + ") DELETES(" + countDeletes + ") ERRORS(" + countErrors + ")");
-            log(SEP);
+            Utils.instance().getLogger().info("TOTAL for user [" + user + "] CREATED(" + countCreated + ") DELETES(" + countDeletes + ") ERRORS(" + countErrors + ")");
+            Utils.instance().getLogger().info(SEP);
         }
-        log(time(startTime1) + ":TOTAL RUN  TIME");
-        log(SEP);
+        Utils.instance().getLogger().info(time(startTime1) + ":TOTAL RUN  TIME");
+        Utils.instance().getLogger().info(SEP);
     }
 
     private static void listImagesForPath(List<String> list, File path, int rootPathLength) {
@@ -220,7 +212,7 @@ public class Main {
                     list.add(relativeFilePath);
                 }
             }
-            log("Scanned images:" + path.getAbsolutePath() + ". Found ["+list.size()+"] files");
+            Utils.instance().getLogErr().info("Scanned images:" + path.getAbsolutePath() + ". Found [" + list.size() + "] files");
         }
     }
 
@@ -241,37 +233,6 @@ public class Main {
         }
     }
 
-    public static void initLog() {
-        logLineSeperator = configData.getLogLineSeparator();
-        if (logLineSeperator.equals("NL")) {
-            logLineSeperator = System.getProperty("line.separator");
-        }
-        String fileName = createFileNameTimeStamp(configData.getLogFileName(), configData.formatLogFileTimeStamp());
-        System.out.println("Log File Name is :" + fileName);
-        File f = new File(fileName);
-        f = new File(f.getAbsolutePath());
-        System.out.println("Log File Name FINAL is :" + fileName);
-        try {
-            logOutputStream = new FileOutputStream(f, true);
-        } catch (Exception ex) {
-            throw new GLoaderException("Could not create logFile " + f.getAbsolutePath(), ex);
-        }
-        writeLog("Log created!", logOutputStream);
-
-        fileName = createFileNameTimeStamp(configData.getLogErrorFileName(), configData.formatLogFileTimeStamp());
-        System.out.println("Error Log File Name is :" + fileName);
-        f = new File(fileName);
-        f = new File(f.getAbsolutePath());
-        System.out.println("Error Log File Name FINAL is :" + fileName);
-        try {
-            logErrorOutputStream = new FileOutputStream(f, true);
-        } catch (Exception ex) {
-            throw new GLoaderException("Could not create logFile " + f.getAbsolutePath(), ex);
-        }
-        writeLog("Error Log created!", logErrorOutputStream);
-        writeLog("Error Log created! " + fileName, logOutputStream);
-    }
-
     public static String createFileNameTimeStamp(String template, String timestamp) {
         int pos = template.indexOf("%{ts}");
         if (pos >= 0) {
@@ -286,59 +247,6 @@ public class Main {
             return template.substring(0, pos) + fileName + template.substring(pos + "%{fn}".length());
         }
         return template;
-    }
-
-    public static void log(String message) {
-        log(message, null);
-    }
-
-    public static void logError(String message) {
-        if (configData == null) {
-            writeLog(message, logErrorOutputStream);
-        } else {
-            if (configData.isVerbose()) {
-                writeLog(message, logErrorOutputStream);
-            }
-        }
-    }
-
-    public static void log(String message, Throwable ex) {
-        if (ex == null) {
-            if (configData == null) {
-                writeLog(message, logOutputStream);
-            } else {
-                if (configData.isVerbose()) {
-                    writeLog(message, logOutputStream);
-                }
-            }
-        } else {
-            writeLog(message + NL + toStringException(ex), logErrorOutputStream);
-        }
-    }
-
-    private static void writeLog(String message, FileOutputStream fos) {
-        if (message == null) {
-            message = null;
-        }
-        System.out.println(message);
-        if (fos != null) {
-            try {
-                if (configData == null) {
-                    fos.write(("NO_CONFIG:" + message + logLineSeperator).getBytes(Charset.defaultCharset()));
-                } else {
-                    fos.write((configData.formatLogLineTimeStamp() + ":" + message + logLineSeperator).getBytes(Charset.defaultCharset()));
-                }
-            } catch (Exception io) {
-                System.err.println("Failed to write to log file:" + message + ":EX:" + io.getMessage());
-            }
-        }
-    }
-
-    private static String toStringException(Throwable ex) {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        ex.printStackTrace(pw);
-        return sw.toString();
     }
 
     private static long MS_SEC = 1000;

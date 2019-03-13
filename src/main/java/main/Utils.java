@@ -17,6 +17,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import main.config.ConfigData;
 import main.config.ConfigDataException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -29,6 +31,9 @@ public class Utils {
     private final String thumbNailFileSuffix;
     private final FileFilter thumbNailFileFilter;
     private static final ObjectMapper jsonMapper;
+    private static Utils instance;
+    private final Logger logger;
+    private final Logger logErr;
 
     static {
         jsonMapper = new ObjectMapper();
@@ -37,11 +42,18 @@ public class Utils {
         jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
     }
 
-    public FileFilter getThumbNailFileFilter() {
-        return thumbNailFileFilter;
+    public static Utils instance(ConfigData configData) {
+        if (instance == null) {
+            instance = new Utils(configData);
+        }
+        return instance;
     }
 
-    public Utils(ConfigData configData) {
+    public static Utils instance() {
+        return instance;
+    }
+
+    private Utils(ConfigData configData) {
         String fmt = configData.getThumbNailTimeStamp();
         if ((fmt == null) || (fmt.isEmpty())) {
             throw new ConfigDataException("Config data 'thumbNailTimeStamp' is empty");
@@ -59,6 +71,24 @@ public class Utils {
                 return (pathname.isFile() && pathname.getName().endsWith(thumbNailFileSuffix));
             }
         };
+        logger = LogManager.getLogger("Main :");
+        logErr = LogManager.getLogger("Error:");
+    }
+
+    public Logger getLogger() {
+        return logger;
+    }
+
+    public Logger getLogErr() {
+        return logErr;
+    }
+
+    public Logger getLogger(String id) {
+        return LogManager.getLogger("Main :");
+    }
+
+    public FileFilter getThumbNailFileFilter() {
+        return thumbNailFileFilter;
     }
 
     public String fileNameFromThumbNailName(String thumbNailFileName) {

@@ -16,12 +16,15 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import main.GLoaderException;
 import main.Main;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
  * @author stuar
  */
 public class CreateThumbNail {
+    private static final Logger logger = LogManager.getLogger("Main");
 
     private static final String FORMAT = "jpg";
 
@@ -104,7 +107,7 @@ public class CreateThumbNail {
             if (m.hasDateInfo()) {
                 return m;
             } else {
-                Main.logError("[NO DATE - FILE] " + file.getAbsolutePath());
+                logger.info("[NO DATE - FILE] " + file.getAbsolutePath());
             }
         } catch (ImageProcessingException | IOException ex) {
             return m.setErr(ex.getMessage());

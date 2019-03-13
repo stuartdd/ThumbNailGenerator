@@ -11,7 +11,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import main.GLoaderException;
 
 /**
  *
@@ -23,23 +22,19 @@ public class ConfigData {
     private String thumbNailTimeStamp;
     private String thumbNailFileSuffix;
     private Resources resources;
-    private boolean verbose = false;
     private boolean test = false;
-    private String logFilePath;
-    private String logErrorFileName;
-    private String logFileName;
-    private String logLineSeparator = "\n";
-    private String logFileTimeStamp;
-    private String logLineTimeStamp;
+    private String logPath;
     private List<String> imageExtensions = new ArrayList<>();
 
-
-    public String getLogFileName() {
-        return logFileName;
+    public String getLogPath() {
+        return logPath;
     }
 
-    public void setLogFileName(String logFileName) {
-        this.logFileName = logFileName;
+    public void setLogPath(String logPath) {
+        if (!System.getProperties().contains("logPath")) {
+            System.getProperties().put("logPath", logPath);
+        }
+        this.logPath = logPath;
     }
 
     public String getThumbNailsRoot() {
@@ -82,14 +77,6 @@ public class ConfigData {
         this.resources = resources;
     }
 
-    public boolean isVerbose() {
-        return verbose;
-    }
-
-    public void setVerbose(boolean verbose) {
-        this.verbose = verbose;
-    }
-
     public boolean isTest() {
         return test;
     }
@@ -98,87 +85,10 @@ public class ConfigData {
         this.test = test;
     }
 
-    public String getLogFilePath() {
-        return logFilePath;
-    }
-
-    public void setLogFilePath(String logFilePath) {
-        this.logFilePath = logFilePath;
-    }
-
-    public String getLogLineSeparator() {
-        return logLineSeparator;
-    }
-
-    public void setLogLineSeparator(String logLineSeparator) {
-        this.logLineSeparator = logLineSeparator;
-    }
-
-    public String getLogFileTimeStamp() {
-        return logFileTimeStamp;
-    }
-
-    public void setLogFileTimeStamp(String logFileTimeStamp) {
-        this.logFileTimeStamp = logFileTimeStamp;
-    }
-
-    public String getLogLineTimeStamp() {
-        return logLineTimeStamp;
-    }
-
-    public void setLogLineTimeStamp(String logLineTimeStamp) {
-        this.logLineTimeStamp = logLineTimeStamp;
-    }
-
-    public String getLogErrorFileName() {
-        return logErrorFileName;
-    }
-
-    public void setLogErrorFileName(String logErrorFileName) {
-        this.logErrorFileName = logErrorFileName;
-    }
-
     @JsonIgnore
     public String formatThumbNailFileTimeStamp(Date dateTimeOriginal) {
         SimpleDateFormat sdf = new SimpleDateFormat(getThumbNailTimeStamp());
         return sdf.format(dateTimeOriginal);
-    }
-
-    @JsonIgnore
-    public String formatLogFileTimeStamp() {
-        SimpleDateFormat sdf = new SimpleDateFormat(getLogFileTimeStamp());
-        return sdf.format(new Date());
-    }
-
-    @JsonIgnore
-    public String formatLogLineTimeStamp() {
-        SimpleDateFormat sdf = new SimpleDateFormat(getLogLineTimeStamp());
-        return sdf.format(new Date());
-    }
-
-    public void loaded(Object cdb) {
-        testPath(thumbNailsRoot);
-        List<String> temp = new ArrayList<>();
-        for (String s : imageExtensions) {
-            temp.add(s.toLowerCase());
-        }
-        imageExtensions = temp;
-        resources.check(this);
-        if (logFilePath != null) {
-            testPath(logFilePath);
-        }
-    }
-
-    public static File testPath(final String path) {
-        File p = new File(path);
-        p = new File(p.getAbsolutePath());
-        if (p.exists()) {
-            if (p.isDirectory()) {
-                return p;
-            }
-            throw new GLoaderException("The path [" + p.getAbsolutePath() + "] must be a directory.");
-        }
-        throw new GLoaderException("The path [" + p.getAbsolutePath() + "] does not exist.");
     }
 
     public boolean isImageFile(File file) {
@@ -191,7 +101,6 @@ public class ConfigData {
                 return true;
             }
         }
-
         return false;
     }
 

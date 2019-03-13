@@ -34,14 +34,5 @@ public class UserData {
         this.imagePaths = imagePaths;
     }
 
-    void check() {
-        ConfigData.testPath(imageRoot);
-        for (String path : imagePaths) {
-            ConfigData.testPath(imageRoot + File.separator + path);
-        }
-        if (imagePaths.isEmpty()) {
-            imagePaths.add("");
-        }
-    }
 
 }

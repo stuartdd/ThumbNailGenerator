@@ -24,11 +24,4 @@ public class Resources {
     public void setUsers(Map<String, UserData> users) {
         this.users = users;
     }
-
-    void check(ConfigData configData) {
-        for (UserData userData : users.values()) {
-            userData.check();
-        }
-    }
-
 }

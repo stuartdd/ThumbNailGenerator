@@ -1,10 +1,8 @@
 package main;
 
-import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Map;
 import main.config.ConfigData;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
@@ -33,7 +31,7 @@ public class UtilsTest {
         configData = Utils.createConfigFromJsonFile("configThumbNailGen.json");
         sdf = new SimpleDateFormat(configData.getThumbNailTimeStamp());
         ts = sdf.format(new Date());
-        utils = new Utils(configData);
+        utils = Utils.instance(configData);
     }
 
     @Test
