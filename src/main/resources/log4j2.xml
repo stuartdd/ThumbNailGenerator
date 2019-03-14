@@ -3,30 +3,38 @@
     <Appenders>
         <RollingFile 
             name="StdOutFile" 
-            fileName="${sys:logPath}/StdOutLog.log" 
+            fileName="${sys:logPath}/${sys:logName}.log" 
             bufferedIO="false">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"/>  
-            <FilePattern>${sys:logPath}/StdOutLog.%d{dd-MMM}.log.gz</FilePattern>
+            <PatternLayout pattern="%d{YYYY-MM-dd HH:mm:ss.SSS} %-5level %logger{36} %msg%n"/>  
+            <FilePattern>${sys:logPath}/${sys:logName}.%d{YYYY-MM-dd}.log</FilePattern>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1"/>                  
             </Policies>
             <DefaultRolloverStrategy max="5" />        
         </RollingFile>
-        <File name="StdErrorFile" fileName="${sys:logPath}/StdErrLog.log" bufferedIO="false" advertiseURI="file:/${sys:logPath}/StdErrLog.log" advertise="true">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"/>            
-        </File>
+        <RollingFile 
+            name="StdErrorFile" 
+            fileName="${sys:logPath}/${sys:logName}Err.log" 
+            bufferedIO="false">
+            <PatternLayout pattern="%d{YYYY-MM-dd HH:mm:ss.SSS} %-5level %logger{36} %msg%n"/>  
+            <FilePattern>${sys:logPath}/${sys:logName}Err.%d{YYYY-MM-dd}.log</FilePattern>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>                  
+            </Policies>
+            <DefaultRolloverStrategy max="5" />        
+        </RollingFile>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"/>
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %logger{36} %msg%n"/>
         </Console>
         <Console name="Error" target="SYSTEM_ERR">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level - %msg%n"/>
         </Console>
     </Appenders>
     <Loggers>
-        <Logger name="Main :" level="trace" additivity="false">
+        <Logger name="TN-Scan:" level="trace" additivity="false">
             <AppenderRef ref="StdOutFile"/>
         </Logger>
-        <Logger name="Error:" level="trace" additivity="false">
+        <Logger name="TN-Error:" level="trace" additivity="false">
             <AppenderRef ref="StdErrorFile"/>
         </Logger>
         <Root level="error">

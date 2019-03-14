@@ -24,11 +24,12 @@ import org.apache.logging.log4j.Logger;
  * @author stuar
  */
 public class CreateThumbNail {
+
     private static final Logger logger = LogManager.getLogger("Main");
 
     private static final String FORMAT = "jpg";
 
-    public static boolean create(String userBasePath, String pathToFileAndName, String user, String thumbNailBasePath) {
+    public static boolean create(String userBasePath, String pathToFileAndName, String user, String thumbNailBasePath, boolean dryRun) {
         File userBasePathFile = new File(userBasePath);
         userBasePathFile = new File(userBasePathFile.getAbsolutePath());
         if (!userBasePathFile.exists()) {
@@ -77,7 +78,9 @@ public class CreateThumbNail {
 
         BufferedImage bufferedImage = ImageUtils.renderImage(metaData);
         try {
-            ImageIO.write(bufferedImage, FORMAT, fullFileNameFile);
+            if (!dryRun) {
+                ImageIO.write(bufferedImage, FORMAT, fullFileNameFile);
+            }
         } catch (IOException ex) {
             throw new GLoaderException("Failed to create thumbnail " + fullFileNameFile.getAbsolutePath(), ex);
         }
@@ -92,14 +95,14 @@ public class CreateThumbNail {
             for (Directory directory : metadata.getDirectories()) {
                 for (Tag tag : directory.getTags()) {
                     if (tag.getTagName().equals("Date/Time Original")) {
-                        m.setDateTimeOriginal(tag.getDescription(),file.lastModified()); // 2016:06:02 12:18:20
+                        m.setDateTimeOriginal(tag.getDescription(), file.lastModified()); // 2016:06:02 12:18:20
                     }
                     if (tag.getTagName().equals("Orientation")) {
                         m.setOrientation(tag.getDescription());
                     }
                     if (m.getDateTimeOriginal() == null) {
                         if (tag.getTagName().equals("File Modified Date")) {
-                            m.setDateTimeOriginal(tag.getDescription(),file.lastModified());
+                            m.setDateTimeOriginal(tag.getDescription(), file.lastModified());
                         }
                     }
                 }

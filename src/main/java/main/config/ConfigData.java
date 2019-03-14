@@ -22,9 +22,18 @@ public class ConfigData {
     private String thumbNailTimeStamp;
     private String thumbNailFileSuffix;
     private Resources resources;
-    private boolean test = false;
+    private boolean dryRun = false;
     private String logPath;
+    private String logName;
     private List<String> imageExtensions = new ArrayList<>();
+
+    public boolean isDryRun() {
+        return dryRun;
+    }
+
+    public void setDryRun(boolean dryRun) {
+        this.dryRun = dryRun;
+    }
 
     public String getLogPath() {
         return logPath;
@@ -35,6 +44,17 @@ public class ConfigData {
             System.getProperties().put("logPath", logPath);
         }
         this.logPath = logPath;
+    }
+
+    public String getLogName() {
+        return logName;
+    }
+
+    public void setLogName(String logName) {
+        if (!System.getProperties().contains("logName")) {
+            System.getProperties().put("logName", logName);
+        }
+        this.logName = logName;
     }
 
     public String getThumbNailsRoot() {
@@ -77,13 +97,6 @@ public class ConfigData {
         this.resources = resources;
     }
 
-    public boolean isTest() {
-        return test;
-    }
-
-    public void setTest(boolean test) {
-        this.test = test;
-    }
 
     @JsonIgnore
     public String formatThumbNailFileTimeStamp(Date dateTimeOriginal) {

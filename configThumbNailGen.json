@@ -4,7 +4,8 @@
     "thumbNailFileSuffix" : ".jpg",
     "imageExtensions": [".jpg"],
     "logPath": "/logs",
-    "test": true,
+    "logName": "ThumbNailGen",
+    "dryRun": false,
     "resources": {
         "users": {
             "shared": {

@@ -42,11 +42,14 @@ public class Main {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        
-        String configArg = null;
 
+        String configArg = null;
+        boolean dryRunOverride = false;
         for (String arg : args) {
             if (arg.startsWith("-")) {
+                if (arg.equalsIgnoreCase("-dryrun")) {
+                    dryRunOverride = true;
+                }
             } else {
                 configArg = arg;
             }
@@ -57,16 +60,22 @@ public class Main {
         } else {
             configData = (ConfigData) utils.createConfigFromJsonFile("configThumbNailGen.json");
         }
+        if (dryRunOverride) {
+            configData.setDryRun(true);
+        }
         utils = Utils.instance(configData);
 
+        
+        
+        
         try {
-            doDiff();
+            doDiff(configData.isDryRun()? "<Dry-Run> " : "");
         } catch (IOException ex) {
-            Utils.instance().getLogger().error(ex);
+            Utils.instance().getLogErr().error(ex);
         }
     }
 
-    private static void doDiff() throws IOException {
+    private static void doDiff(String logPrefix) throws IOException {
         Utils.instance().getLogger().info(SEP);
         long startTime1 = System.currentTimeMillis();
         File thumbNailsRoot = new File(configData.getThumbNailsRoot());
@@ -119,7 +128,7 @@ public class Main {
 
                 imagePathFile = new File(imagePathFile.getAbsolutePath());
                 List<String> list = new ArrayList<>();
-                listImagesForPath(list, imagePathFile, imageRootFile.getAbsolutePath().length());
+                listImagesForPath(list, imagePathFile, imageRootFile.getAbsolutePath().length(), logPrefix);
                 for (String s : list) {
                     if (thumbNailMap.containsKey(s)) {
                         thumbNailMap.put(s, "H");
@@ -143,20 +152,20 @@ public class Main {
             }
 
             Utils.instance().getLogger().info(SEP);
-            Utils.instance().getLogger().info("TOTAL for user [" + user + "] HIT(" + hits + ") MISS(" + missList.size() + ") DEL(" + delList.size() + ")");
+            Utils.instance().getLogger().info(logPrefix + "TOTAL for user [" + user + "] HIT(" + hits + ") MISS(" + missList.size() + ") DEL(" + delList.size() + ")");
             for (String f : missList) {
                 try {
-                    boolean created = CreateThumbNail.create(imageRootFile.getAbsolutePath(), f, user, configData.getThumbNailsRoot());
+                    boolean created = CreateThumbNail.create(imageRootFile.getAbsolutePath(), f, user, configData.getThumbNailsRoot(), configData.isDryRun());
                     if (created) {
                         countCreated++;
-                        Utils.instance().getLogger().info("USER[" + user + "] IMAGE NEW : " + f);
+                        Utils.instance().getLogger().info(logPrefix + "USER[" + user + "] IMAGE NEW : " + f);
                     } else {
-                        Utils.instance().getLogger().info("USER[" + user + "] IMAGE SKIPPED : " + f);
+                        Utils.instance().getLogger().info(logPrefix + "USER[" + user + "] IMAGE SKIPPED : " + f);
                     }
                 } catch (Exception ex) {
                     countErrors++;
-                    Utils.instance().getLogger().info("USER[" + user + "] IMAGE ERR : " + f + " " + ex.getClass().getSimpleName() + ":" + ex.getMessage());
-                    Utils.instance().getLogger().info("USER[" + user + "] IMAGE ERR : " + f + " " + ex.getClass().getSimpleName() + ":" + ex.getMessage(), ex);
+                    Utils.instance().getLogger().info(logPrefix + "USER[" + user + "] IMAGE ERR : " + f + " " + ex.getClass().getSimpleName() + ":" + ex.getMessage());
+                    Utils.instance().getLogErr().error(logPrefix + "USER[" + user + "] IMAGE ERR : " + f + " " + ex.getClass().getSimpleName() + ":" + ex.getMessage(), ex);
                 }
 
             }
@@ -168,29 +177,39 @@ public class Main {
                 for (File toDelete : list) {
                     if (toDelete.getName().contains(delFile.getName())) {
                         hasBeenFound = true;
-                        if (toDelete.delete()) {
-                            Utils.instance().getLogger().info("USER[" + user + "] DEL:" + user + ":" + toDelete.getAbsolutePath());
+                        boolean deletedOk;
+                        if (!configData.isDryRun()) {
+                            deletedOk = toDelete.delete();
+                        } else {
+                            deletedOk = true;
+                        }
+                        if (deletedOk) {
+                            Utils.instance().getLogger().info(logPrefix + "USER[" + user + "] DEL:" + user + ":" + toDelete.getAbsolutePath());
                             countDeletes++;
                         } else {
-                            Utils.instance().getLogger().info("USER[" + user + "] IMAGE ERR:" + toDelete.getAbsolutePath() + " could not be deleted!");
-                            Utils.instance().getLogErr().error("USER[" + user + "] IMAGE ERR:" + toDelete.getAbsolutePath() + " could not be deleted!");
+                            Utils.instance().getLogger().info(logPrefix + "USER[" + user + "] IMAGE ERR:" + toDelete.getAbsolutePath() + " could not be deleted!");
+                            Utils.instance().getLogErr().error(logPrefix + "USER[" + user + "] IMAGE ERR:" + toDelete.getAbsolutePath() + " could not be deleted!");
                             countErrors++;
                         }
                     }
                 }
                 if (!hasBeenFound) {
-                    Utils.instance().getLogger().info("USER[" + user + "] IMAGE ERR:" + delFile.getAbsolutePath() + " not recognised!");
-                    Utils.instance().getLogErr().error("USER[" + user + "] IMAGE ERR:" + delFile.getAbsolutePath() + " not recognised!");
+                    Utils.instance().getLogger().info(logPrefix + "USER[" + user + "] IMAGE ERR:" + delFile.getAbsolutePath() + " not recognised!");
+                    Utils.instance().getLogErr().error(logPrefix + "USER[" + user + "] IMAGE ERR:" + delFile.getAbsolutePath() + " not recognised!");
+                    countErrors++;
                 }
             }
-            Utils.instance().getLogger().info("TOTAL for user [" + user + "] CREATED(" + countCreated + ") DELETES(" + countDeletes + ") ERRORS(" + countErrors + ")");
+            Utils.instance().getLogger().info(logPrefix + "TOTAL for user [" + user + "] CREATED(" + countCreated + ") DELETES(" + countDeletes + ") ERRORS(" + countErrors + ")");
+            if (countErrors > 0) {
+                Utils.instance().getLogErr().error(logPrefix + "TOTAL for user [" + user + "] CREATED(" + countCreated + ") DELETES(" + countDeletes + ") ERRORS(" + countErrors + ")");
+            }
             Utils.instance().getLogger().info(SEP);
         }
-        Utils.instance().getLogger().info(time(startTime1) + ":TOTAL RUN  TIME");
+        Utils.instance().getLogger().info(logPrefix + time(startTime1) + ":TOTAL RUN  TIME");
         Utils.instance().getLogger().info(SEP);
     }
 
-    private static void listImagesForPath(List<String> list, File path, int rootPathLength) {
+    private static void listImagesForPath(List<String> list, File path, int rootPathLength, String logPrefix) {
         if (path.isDirectory()) {
             File[] files = path.listFiles(new FileFilter() {
                 @Override
@@ -203,7 +222,7 @@ public class Main {
             });
             for (File f : files) {
                 if (f.isDirectory()) {
-                    listImagesForPath(list, f, rootPathLength);
+                    listImagesForPath(list, f, rootPathLength, logPrefix);
                 } else {
                     String relativeFilePath = f.getAbsolutePath().substring(rootPathLength);
                     while (relativeFilePath.startsWith(File.separator)) {
@@ -212,7 +231,7 @@ public class Main {
                     list.add(relativeFilePath);
                 }
             }
-            Utils.instance().getLogErr().info("Scanned images:" + path.getAbsolutePath() + ". Found [" + list.size() + "] files");
+            Utils.instance().getLogger().info(logPrefix + "Scanned images:" + path.getAbsolutePath() + ". Found [" + list.size() + "] files");
         }
     }
 

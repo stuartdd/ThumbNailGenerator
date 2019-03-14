@@ -71,8 +71,8 @@ public class Utils {
                 return (pathname.isFile() && pathname.getName().endsWith(thumbNailFileSuffix));
             }
         };
-        logger = LogManager.getLogger("Main :");
-        logErr = LogManager.getLogger("Error:");
+        logger = LogManager.getLogger("TN-Scan:");
+        logErr = LogManager.getLogger("TN-Error:");
     }
 
     public Logger getLogger() {
