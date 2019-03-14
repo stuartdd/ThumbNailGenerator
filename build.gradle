@@ -28,13 +28,13 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.10'
 }
 
-task deploy(type: Exec) {
-    if (System.getProperty('os.name') != 'Linux') {
-        commandLine 'cmd', '/C', 'deployWS.bat'
-    } else {
-        commandLine 'sh', './deployWS.sh'
-    }
-}
+//task deploy(type: Exec) {
+//    if (System.getProperty('os.name') != 'Linux') {
+//        commandLine 'cmd', '/C', 'deployWS.bat'
+//    } else {
+//        commandLine 'sh', './deployWS.sh'
+//    }
+//}
 
 task fatJar(type: Jar) {
     manifest {

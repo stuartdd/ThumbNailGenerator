@@ -147,5 +147,4 @@ public class Utils {
             return OS.UNKNOWN;
         }
     }
-
 }
