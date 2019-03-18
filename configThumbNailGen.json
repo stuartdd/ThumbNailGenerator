@@ -5,7 +5,7 @@
     "imageExtensions": [".jpg"],
     "logPath": "logs",
     "logName": "ThumbNailGen",
-    "dryRun": true,
+    "dryRun": false,
     "resources": {
         "users": {
             "shared": {

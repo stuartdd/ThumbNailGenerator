@@ -13,9 +13,12 @@ import com.drew.metadata.Tag;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import javax.imageio.ImageIO;
 import main.GLoaderException;
 import main.Main;
+import main.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,8 +29,8 @@ import org.apache.logging.log4j.Logger;
 public class CreateThumbNail {
 
     private static final Logger logger = LogManager.getLogger("Main");
-
     private static final String FORMAT = "jpg";
+    private static Map<String, String> createOnce = new HashMap<String, String>();
 
     public static boolean create(String userBasePath, String pathToFileAndName, String user, String thumbNailBasePath, boolean dryRun) {
         File userBasePathFile = new File(userBasePath);
@@ -49,17 +52,27 @@ public class CreateThumbNail {
         }
 
         thumbNailBasePathFile = new File(thumbNailBasePathFile.getAbsolutePath() + File.separator + user);
-        if (!thumbNailBasePathFile.exists()) {
-            if (!thumbNailBasePathFile.mkdir()) {
-                throw new GLoaderException("Thumbnail library [" + thumbNailBasePathFile.getAbsolutePath() + "] could not be created.");
+        if (notAdded(thumbNailBasePathFile)) {
+            if (!thumbNailBasePathFile.exists()) {
+                Utils.instance().log("*** Create ThumbNail *** base path:" + thumbNailBasePathFile.getAbsolutePath());
+                if (!dryRun) {
+                    if (!thumbNailBasePathFile.mkdir()) {
+                        throw new GLoaderException("Thumbnail library [" + thumbNailBasePathFile.getAbsolutePath() + "] could not be created.");
+                    }
+                }
             }
         }
 
         thumbNailBasePathFile = new File(thumbNailBasePathFile.getAbsolutePath() + File.separator + pathToFileAndName);
         File thumbnailParent = thumbNailBasePathFile.getParentFile();
-        if (!thumbnailParent.exists()) {
-            if (!thumbnailParent.mkdirs()) {
-                throw new GLoaderException("Thumbnail library [" + thumbnailParent.getAbsolutePath() + "] could not be created.");
+        if (notAdded(thumbnailParent)) {
+            if (!thumbnailParent.exists()) {
+                Utils.instance().log("*** Create ThumbNail *** path:" + thumbnailParent.getAbsolutePath());
+                if (!dryRun) {
+                    if (!thumbnailParent.mkdirs()) {
+                        throw new GLoaderException("Thumbnail library [" + thumbnailParent.getAbsolutePath() + "] could not be created.");
+                    }
+                }
             }
         }
 
@@ -116,6 +129,14 @@ public class CreateThumbNail {
             return m.setErr(ex.getMessage());
         }
         return m.setErr("No Date Information found!");
+    }
+
+    private static boolean notAdded(File f) {
+        if (!createOnce.containsKey(f.getAbsolutePath())) {
+            createOnce.put(f.getAbsolutePath(), "");
+            return true;
+        }
+        return false;
     }
 
 }

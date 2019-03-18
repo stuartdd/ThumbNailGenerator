@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class Utils {
 
-    private static final String DRY_RUN = "<Dry-Run>";
+    private static final String DRY_RUN = "<Dry-Run> ";
     private final SimpleDateFormat thumbNailTimeStamp;
     private final int thumbNailtimeStampLength;
     private final String thumbNailFileSuffix;
