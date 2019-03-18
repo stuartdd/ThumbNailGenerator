@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class Utils {
 
+    private static final String DRY_RUN = "<Dry-Run>";
     private final SimpleDateFormat thumbNailTimeStamp;
     private final int thumbNailtimeStampLength;
     private final String thumbNailFileSuffix;
@@ -34,6 +35,7 @@ public class Utils {
     private static Utils instance;
     private final Logger logger;
     private final Logger logErr;
+    private static boolean dryRun = false;
 
     static {
         jsonMapper = new ObjectMapper();
@@ -44,7 +46,9 @@ public class Utils {
 
     public static Utils instance(ConfigData configData) {
         if (instance == null) {
+            dryRun = configData.isDryRun();
             instance = new Utils(configData);
+
         }
         return instance;
     }
@@ -75,16 +79,23 @@ public class Utils {
         logErr = LogManager.getLogger("TN-Error:");
     }
 
-    public Logger getLogger() {
-        return logger;
+    public void log(String m) {
+        logger.info((dryRun ? DRY_RUN : "") + m);
     }
 
-    public Logger getLogErr() {
-        return logErr;
+    public void logErr(String m) {
+        logger.error((dryRun ? DRY_RUN : "") + m);
+        logErr.error((dryRun ? DRY_RUN : "") + m);
     }
 
-    public Logger getLogger(String id) {
-        return LogManager.getLogger("Main :");
+    public void logErr(String m, Throwable ex) {
+        logger.error((dryRun ? DRY_RUN : "") + m);
+        logErr.error((dryRun ? DRY_RUN : "") + m, ex);
+    }
+    
+    public void logErr(Throwable ex) {
+        logger.error((dryRun ? DRY_RUN : "") + ex.getMessage());
+        logErr.error(ex);
     }
 
     public FileFilter getThumbNailFileFilter() {

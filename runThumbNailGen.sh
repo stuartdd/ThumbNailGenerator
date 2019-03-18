@@ -1,2 +1,2 @@
 #!/bin/bash
-java -jar PiThumbNailGenExe-1.0.jar $1
+java -jar ThumbNailGeneratorExe-1.0.jar $1

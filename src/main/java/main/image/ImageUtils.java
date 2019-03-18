@@ -56,7 +56,6 @@ public class ImageUtils {
                     tr.rotate(180 * CONV);
                 } else {
                     if (metaData.getDegrees() == 270) {
-                        System.out.println(metaData);
                         tr.translate(0, img.getWidth());
                         tr.rotate(270 * CONV);
                     }
