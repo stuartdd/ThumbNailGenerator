@@ -202,7 +202,7 @@ public class Main {
         utils.log(SEP);
     }
 
-    private static void listImagesForPath(List<String> list, File path, int rootPathLength, String logPrefix) {
+    private static void listImagesForPath(List<String> list, File path, int rootPathLength) {
         if (path.isDirectory()) {
             File[] files = path.listFiles(new FileFilter() {
                 @Override
@@ -215,7 +215,7 @@ public class Main {
             });
             for (File f : files) {
                 if (f.isDirectory()) {
-                    listImagesForPath(list, f, rootPathLength, logPrefix);
+                    listImagesForPath(list, f, rootPathLength);
                 } else {
                     String relativeFilePath = f.getAbsolutePath().substring(rootPathLength);
                     while (relativeFilePath.startsWith(File.separator)) {
