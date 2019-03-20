@@ -23,6 +23,7 @@ public class ConfigData {
     private String thumbNailFileSuffix;
     private Resources resources;
     private boolean dryRun = false;
+    private boolean verbose = false;
     private String logPath;
     private String logName;
     private List<String> imageExtensions = new ArrayList<>();
@@ -33,6 +34,14 @@ public class ConfigData {
 
     public void setDryRun(boolean dryRun) {
         this.dryRun = dryRun;
+    }
+
+    public boolean isVerbose() {
+        return verbose;
+    }
+
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
     }
 
     public String getLogPath() {

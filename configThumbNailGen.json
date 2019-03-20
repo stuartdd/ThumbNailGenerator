@@ -6,6 +6,7 @@
     "logPath": "logs",
     "logName": "ThumbNailGen",
     "dryRun": false,
+    "verbose":false,
     "resources": {
         "users": {
             "shared": {

@@ -54,7 +54,7 @@ public class CreateThumbNail {
         thumbNailBasePathFile = new File(thumbNailBasePathFile.getAbsolutePath() + File.separator + user);
         if (notAdded(thumbNailBasePathFile)) {
             if (!thumbNailBasePathFile.exists()) {
-                Utils.instance().log("*** Create ThumbNail *** base path:" + thumbNailBasePathFile.getAbsolutePath());
+                Utils.instance().log("*** Create ThumbNail *** base path:" + thumbNailBasePathFile.getAbsolutePath(), true);
                 if (!dryRun) {
                     if (!thumbNailBasePathFile.mkdir()) {
                         throw new GLoaderException("Thumbnail library [" + thumbNailBasePathFile.getAbsolutePath() + "] could not be created.");
@@ -67,7 +67,7 @@ public class CreateThumbNail {
         File thumbnailParent = thumbNailBasePathFile.getParentFile();
         if (notAdded(thumbnailParent)) {
             if (!thumbnailParent.exists()) {
-                Utils.instance().log("*** Create ThumbNail *** path:" + thumbnailParent.getAbsolutePath());
+                Utils.instance().log("*** Create ThumbNail *** path:" + thumbnailParent.getAbsolutePath(), true);
                 if (!dryRun) {
                     if (!thumbnailParent.mkdirs()) {
                         throw new GLoaderException("Thumbnail library [" + thumbnailParent.getAbsolutePath() + "] could not be created.");
@@ -80,6 +80,7 @@ public class CreateThumbNail {
         if (metaData.hasError()) {
             throw new GLoaderException("Failed to read image metadata " + metaData.getErr());
         }
+        
         String fullFileName = thumbnailParent.getAbsolutePath() + File.separator
                 + Main.getConfigData().formatThumbNailFileTimeStamp(metaData.getDateTimeOriginal())
                 + "_" + fromFile.getName() + '.' + FORMAT;
@@ -127,6 +128,11 @@ public class CreateThumbNail {
             }
         } catch (ImageProcessingException | IOException ex) {
             return m.setErr(ex.getMessage());
+        } catch (Exception ex) {
+            String message = "Image File:"+(file==null?"":file.getAbsolutePath())+" threw Exception:"+ex.getClass().getSimpleName()+": Message:"+ex.getMessage();
+            Utils.instance().log(message, false);
+            Utils.instance().logErr(message, ex);
+            return m.setErr(message);
         }
         return m.setErr("No Date Information found!");
     }

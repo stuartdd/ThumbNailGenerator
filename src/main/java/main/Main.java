@@ -60,7 +60,7 @@ public class Main {
             configData.setDryRun(true);
         }
         utils = Utils.instance(configData);
-       
+
         try {
             doDiff();
         } catch (IOException ex) {
@@ -69,7 +69,8 @@ public class Main {
     }
 
     private static void doDiff() throws IOException {
-        utils.log(SEP);
+        int logLineCounter = 0;
+        utils.log(SEP, false);
         long startTime1 = System.currentTimeMillis();
         File thumbNailsRoot = new File(configData.getThumbNailsRoot());
         if (!thumbNailsRoot.exists()) {
@@ -144,23 +145,21 @@ public class Main {
                 }
             }
 
-            utils.log(SEP);
-            utils.log("TOTAL for user [" + user + "] HIT(" + hits + ") MISS(" + missList.size() + ") DEL(" + delList.size() + ")");
+            utils.log("TOTAL for user [" + user + "] HIT(" + hits + ") MISS(" + missList.size() + ") DEL(" + delList.size() + ")",false);
             for (String f : missList) {
                 try {
                     boolean created = CreateThumbNail.create(imageRootFile.getAbsolutePath(), f, user, configData.getThumbNailsRoot(), configData.isDryRun());
                     if (created) {
                         countCreated++;
-                        utils.log("USER[" + user + "] IMAGE NEW : " + f);
+                        utils.log("USER[" + user + "] IMAGE NEW [" + logLineCounter + "] : " + f, false);
                     } else {
-                        utils.log("USER[" + user + "] IMAGE SKIPPED : " + f);
+                        utils.log("USER[" + user + "] IMAGE SKIPPED [" + logLineCounter + "] : " + f, ((logLineCounter % 50) != 0));
                     }
                 } catch (Exception ex) {
                     countErrors++;
-                    utils.log("USER[" + user + "] IMAGE ERR : " + f + " " + ex.getClass().getSimpleName() + ":" + ex.getMessage());
-                    utils.logErr("USER[" + user + "] IMAGE ERR : " + f + " " + ex.getClass().getSimpleName() + ":" + ex.getMessage(), ex);
+                    utils.logErr("USER[" + user + "] IMAGE ERR [" + logLineCounter + "] : " + f + " " + ex.getClass().getSimpleName() + ":" + ex.getMessage(), ex);
                 }
-
+                logLineCounter++;
             }
             for (String f : delList) {
                 File delFile = new File(thumbNailsRoot + File.separator + f);
@@ -177,29 +176,27 @@ public class Main {
                             deletedOk = true;
                         }
                         if (deletedOk) {
-                            utils.log("USER[" + user + "] DEL:" + user + ":" + toDelete.getAbsolutePath());
+                            utils.log("USER[" + user + "] DEL:" + user + ":" + toDelete.getAbsolutePath(), false);
                             countDeletes++;
                         } else {
-                            utils.log("USER[" + user + "] IMAGE ERR:" + toDelete.getAbsolutePath() + " could not be deleted!");
                             utils.logErr("USER[" + user + "] IMAGE ERR:" + toDelete.getAbsolutePath() + " could not be deleted!");
                             countErrors++;
                         }
                     }
                 }
                 if (!hasBeenFound) {
-                    utils.log("USER[" + user + "] IMAGE ERR:" + delFile.getAbsolutePath() + " not recognised!");
                     utils.logErr("USER[" + user + "] IMAGE ERR:" + delFile.getAbsolutePath() + " not recognised!");
                     countErrors++;
                 }
             }
-            utils.log("TOTAL for user [" + user + "] CREATED(" + countCreated + ") DELETES(" + countDeletes + ") ERRORS(" + countErrors + ")");
+            utils.log("TOTAL for user [" + user + "] CREATED(" + countCreated + ") DELETES(" + countDeletes + ") ERRORS(" + countErrors + ")", false);
             if (countErrors > 0) {
                 utils.logErr("TOTAL for user [" + user + "] CREATED(" + countCreated + ") DELETES(" + countDeletes + ") ERRORS(" + countErrors + ")");
             }
-            utils.log(SEP);
+            utils.log(SEP, false);
         }
-        utils.log(time(startTime1) + ":TOTAL RUN  TIME");
-        utils.log(SEP);
+        utils.log(time(startTime1) + ":TOTAL RUN  TIME", false);
+        utils.log(SEP, false);
     }
 
     private static void listImagesForPath(List<String> list, File path, int rootPathLength) {
@@ -224,7 +221,7 @@ public class Main {
                     list.add(relativeFilePath);
                 }
             }
-            utils.log("Scanned images:" + path.getAbsolutePath() + ". Found [" + list.size() + "] files");
+            utils.log("Scanned images:" + path.getAbsolutePath() + ". Found [" + list.size() + "] files", true);
         }
     }
 

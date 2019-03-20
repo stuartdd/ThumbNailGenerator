@@ -36,6 +36,7 @@ public class Utils {
     private final Logger logger;
     private final Logger logErr;
     private static boolean dryRun = false;
+    private static boolean verbose = false;
 
     static {
         jsonMapper = new ObjectMapper();
@@ -47,6 +48,7 @@ public class Utils {
     public static Utils instance(ConfigData configData) {
         if (instance == null) {
             dryRun = configData.isDryRun();
+            verbose= configData.isVerbose();
             instance = new Utils(configData);
 
         }
@@ -79,12 +81,13 @@ public class Utils {
         logErr = LogManager.getLogger("TN-Error:");
     }
 
-    public void log(String m) {
-        logger.info((dryRun ? DRY_RUN : "") + m);
+    public void log(String m, boolean optional) {
+        if (verbose || (!optional)) {
+            logger.info((dryRun ? DRY_RUN : "") + m);
+        } 
     }
 
     public void logErr(String m) {
-        logger.error((dryRun ? DRY_RUN : "") + m);
         logErr.error((dryRun ? DRY_RUN : "") + m);
     }
 
@@ -92,7 +95,7 @@ public class Utils {
         logger.error((dryRun ? DRY_RUN : "") + m);
         logErr.error((dryRun ? DRY_RUN : "") + m, ex);
     }
-    
+
     public void logErr(Throwable ex) {
         logger.error((dryRun ? DRY_RUN : "") + ex.getMessage());
         logErr.error(ex);
