@@ -30,4 +30,11 @@ public class ThumbNailStatus {
     public void setState(ThumbNailState state) {
         this.state = state;
     }
+
+    @Override
+    public String toString() {
+        return "state=" + state + " name=" + name ;
+    }
+    
+    
 }

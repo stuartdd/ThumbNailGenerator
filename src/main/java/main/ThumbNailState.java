@@ -10,5 +10,5 @@ package main;
  * @author 802996013
  */
 public enum ThumbNailState {
-    HIT, MISS, UNKNOWN
+    HIT, CREATE, UNKNOWN
 }

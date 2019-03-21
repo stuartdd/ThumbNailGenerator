@@ -38,8 +38,12 @@ public class CreateThumbNail {
         if (!userBasePathFile.exists()) {
             throw new GLoaderException("User base path [" + userBasePathFile.getAbsolutePath() + "] not found");
         }
-
-        File fromFile = new File(userBasePath + File.separator + pathToFileAndName);
+        File fromFile;
+        if (pathToFileAndName.startsWith(File.separator)) {
+            fromFile = new File(userBasePath + pathToFileAndName);
+        } else {
+            fromFile = new File(userBasePath + File.separator + pathToFileAndName);
+        }
         fromFile = new File(fromFile.getAbsolutePath());
         if (!fromFile.exists()) {
             throw new GLoaderException("Image file [" + fromFile.getAbsolutePath() + "] not found");

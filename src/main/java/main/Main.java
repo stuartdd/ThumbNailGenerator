@@ -20,6 +20,7 @@ public class Main {
 
     private static final String SEP = "--------------------------------------------------------------------------------------------------------------------";
     private static ConfigData configData;
+    private static String configFileName;
     private static Utils utils;
     private static final ObjectMapper jsonMapper;
 
@@ -39,7 +40,6 @@ public class Main {
      */
     public static void main(String[] args) {
 
-        String configArg = null;
         boolean dryRunOverride = false;
         for (String arg : args) {
             if (arg.startsWith("-")) {
@@ -47,15 +47,14 @@ public class Main {
                     dryRunOverride = true;
                 }
             } else {
-                configArg = arg;
+                configFileName = arg;
             }
         }
 
-        if (configArg != null) {
-            configData = (ConfigData) utils.createConfigFromJsonFile(args[0]);
-        } else {
-            configData = (ConfigData) utils.createConfigFromJsonFile("configThumbNailGen.json");
-        }
+        if (configFileName == null) {
+            configFileName = "configThumbNailGen.json";
+        } 
+        configData = (ConfigData) Utils.createConfigFromJsonFile(configFileName);
         if (dryRunOverride) {
             configData.setDryRun(true);
         }
@@ -69,10 +68,12 @@ public class Main {
     }
 
     private static void doDiff() throws IOException {
-        int logLineCounter = 0;
+        
+        utils.log("START Thumbnail Generation. Config file name: " + configFileName, false);
         utils.log(SEP, false);
         long startTime1 = System.currentTimeMillis();
         File thumbNailsRoot = new File(configData.getThumbNailsRoot());
+        thumbNailsRoot = new File(thumbNailsRoot.getAbsolutePath());
         if (!thumbNailsRoot.exists()) {
             throw new ConfigDataException("ThumbNailsRoot: [" + thumbNailsRoot + "] does not exist. Please create it");
         }
@@ -85,18 +86,17 @@ public class Main {
             if (userData == null) {
                 throw new GLoaderException("User '" + user + "' data is null");
             }
-            /*
-            Thumb nails for a user are stored at thunb nail root + the users name
-             */
-            thumbNailsRoot = new File(thumbNailsRoot.getAbsolutePath() + File.separator + user);
+
             /*
                 Create a map of ALL the the thumbNails for the user. 
                 Path excludes root path.
                 The names will have the date-time and .jpg stripped off them so they are original image names.
              */
+            File thumbNailsUser = new File(thumbNailsRoot.getAbsolutePath()+File.separator+user);
+            thumbNailsUser = new File(thumbNailsUser.getAbsolutePath());
+            
             Map<String, ThumbNailStatus> thumbNailMap = new HashMap<>();
-            mapThumbNailsForPath(thumbNailMap, thumbNailsRoot, thumbNailsRoot.getAbsolutePath().length());
-
+            mapThumbNailsForUser(thumbNailMap, thumbNailsUser, thumbNailsUser.getAbsolutePath().length());
             /*
                 Each users image root directory
              */
@@ -120,32 +120,32 @@ public class Main {
                 } else {
                     imagePathFile = new File(imageRootFile.getAbsolutePath() + File.separator + imagePath);
                 }
-
                 imagePathFile = new File(imagePathFile.getAbsolutePath());
+
                 List<String> list = new ArrayList<>();
                 /*
                 List all of the files in the users original images directory
                  */
                 listImagesForPath(list, imagePathFile, imageRootFile.getAbsolutePath().length());
 
-                for (String s : list) {
-                    ThumbNailStatus thumbNailStatus = thumbNailMap.get(s);
+                for (String tnKey : list) {
+                    ThumbNailStatus thumbNailStatus = thumbNailMap.get(tnKey);
                     if (thumbNailStatus != null) {
                         thumbNailStatus.setState(ThumbNailState.HIT);
                         hits++;
                     } else {
-                        thumbNailMap.put(s, new ThumbNailStatus(s, ThumbNailState.MISS));
+                        thumbNailMap.put(tnKey, new ThumbNailStatus("", ThumbNailState.CREATE));
                     }
                 }
             }
 
-            List<String> missList = new ArrayList<>();
+            List<String> createList = new ArrayList<>();
             List<String> delList = new ArrayList<>();
 
             for (Map.Entry<String, ThumbNailStatus> status : thumbNailMap.entrySet()) {
                 switch (status.getValue().getState()) {
-                    case MISS:
-                        missList.add(status.getKey());
+                    case CREATE:
+                        createList.add(status.getKey());
                         break;
                     case UNKNOWN:
                         delList.add(status.getKey());
@@ -153,27 +153,27 @@ public class Main {
                 }
             }
 
-            utils.log("TOTAL for user [" + user + "] HIT(" + hits + ") MISS(" + missList.size() + ") DEL(" + delList.size() + ") PREPARATION(" + (System.currentTimeMillis() - prepTime) + "ms)", false);
+            utils.log("TOTAL for user [" + user + "] HIT(" + hits + ") MISS(" + createList.size() + ") DEL(" + delList.size() + ") PREPARATION(" + (System.currentTimeMillis() - prepTime) + "ms)", false);
             prepTime = System.currentTimeMillis();
-            for (String originalFileName : missList) {
+            for (String originalFileName : createList) {
                 try {
                     boolean created = CreateThumbNail.create(imageRootFile.getAbsolutePath(), originalFileName, user, configData.getThumbNailsRoot(), configData.isDryRun());
                     if (created) {
                         countCreated++;
-                        utils.log("USER[" + user + "] IMAGE NEW [" + logLineCounter + "] : " + originalFileName, false);
+                        utils.log("USER[" + user + "] NEW IMAGE: " + originalFileName, false);
                     } else {
-                        utils.log("USER[" + user + "] IMAGE SKIPPED [" + logLineCounter + "] : " + originalFileName, ((logLineCounter % 50) != 0));
+                        utils.log("USER[" + user + "] IMAGE SKIPPED : (already exists) " + originalFileName, false);
                     }
                 } catch (Exception ex) {
                     countErrors++;
-                    utils.logErr("USER[" + user + "] IMAGE ERR [" + logLineCounter + "] : " + originalFileName + " " + ex.getClass().getSimpleName() + ":" + ex.getMessage(), ex);
+                    utils.logErr("USER[" + user + "] IMAGE ERR: " + originalFileName + " " + ex.getClass().getSimpleName() + ":" + ex.getMessage(), ex);
                 }
-                logLineCounter++;
             }
 
             for (String f : delList) {
-                String thumbNailName = thumbNailsRoot + File.separator + thumbNailMap.get(f).getName();
-                File delFile = new File(thumbNailName);
+                String thumbNailName = thumbNailMap.get(f).getName();
+                String thumbNailPath = thumbNailsRoot + File.separator + user + File.separator + thumbNailName;
+                File delFile = new File(thumbNailPath);
                 delFile = new File(delFile.getAbsolutePath());
                 boolean deletedOk;
                 if (!configData.isDryRun()) {
@@ -182,13 +182,14 @@ public class Main {
                     deletedOk = true;
                 }
                 if (deletedOk) {
-                    utils.log("USER[" + user + "] DEL:" + user + ":" + delFile.getAbsolutePath(), false);
+                    utils.log("USER[" + user + "] DEL IMAGE: " + thumbNailName, false);
                     countDeletes++;
                 } else {
-                    utils.logErr("USER[" + user + "] IMAGE ERR:" + delFile.getAbsolutePath() + " could not be deleted!");
+                    utils.logErr("USER[" + user + "] IMAGE ERR:" + thumbNailName + " could not be deleted!");
                     countErrors++;
                 }
             }
+            
             utils.log("TOTAL for user [" + user + "] CREATED(" + countCreated + ") DELETES(" + countDeletes + ") ERRORS(" + countErrors + ") PROCESS(" + (System.currentTimeMillis() - prepTime) + "ms)", false);
             if (countErrors > 0) {
                 utils.logErr("TOTAL for user [" + user + "] CREATED(" + countCreated + ") DELETES(" + countDeletes + ") ERRORS(" + countErrors + ") PROCESS(" + (System.currentTimeMillis() - prepTime) + "ms)");
@@ -225,12 +226,12 @@ public class Main {
         }
     }
 
-    private static void mapThumbNailsForPath(Map<String, ThumbNailStatus> map, File path, int rootPathLength) {
+    private static void mapThumbNailsForUser(Map<String, ThumbNailStatus> map, File path, int rootPathLength) {
         if (path.isDirectory()) {
             File[] files = path.listFiles();
             for (File f : files) {
                 if (f.isDirectory()) {
-                    mapThumbNailsForPath(map, f, rootPathLength);
+                    mapThumbNailsForUser(map, f, rootPathLength);
                 } else {
                     String name = f.getName();
                     String parent;
